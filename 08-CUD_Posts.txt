@@ -1,0 +1,177 @@
+########
+# Part 8 - CUD_posts ->
+# Display actual posts created and have the ability to update and delete posts.
+# Create a new post route with a function that will require the user to be logged in by using a login_required 
+# decorator. Render a template. In routes.py add the following code ->
+# # @app.route("/post/new")
+# # @login_required
+# # def new_post():
+# #     return render_template('create_post.html', title='New Post')
+# @ 1:38. Create the new template in the templates file called "create_post.html". Copy/Paste the code from the
+# about.html into this new file to have a starting point. Remove the <h1> tags. The content wanted in here will 
+# be a form for posting new posts. So first you need to create the form within the form.py file. @ 2:24, add. ->
+# # class PostForm(FlaskForm):
+# #     title = StringField('Title', validators=[DataRequired()])
+# #     content = TextAreaField('Content', validators=[DataRequired()])
+# #     submit = SubmitField('Post')
+# Make sure to import TextAreaField at the top of the file!
+
+# @ 4:00. Create an instance of this form in routes.py to pass in the create form in the template. At the top of
+# the file, import PostForm. Add "form = PostForm()" and then pass it into the template by adding "form=form"
+# into the return line. Setup the route to accept a Post/Get request. Put in a conditional to validate the form
+# and handle it when it's posted. Add a flash message for when the post is created and redirect back to home 
+# page. Code snippet. ->
+# # @app.route("/post/new", methods=['GET', 'POST'])
+# # @login_required
+# # def new_post():
+# #     form = PostForm()
+# #     if form.validate_on_submit():
+# #         flash('Your post has been created!', 'success')
+# #         return redirect(url_for('home'))
+# #     return render_template("create_post.html", title="New Post", form=form)
+
+# @ 5:58. Add the form to the create post template. Open the login.html and Copy/Paste the content-section div 
+# that wraps the form into the file "create_post.html". Change the Legend text to "New Post" and change the 1st 
+# form-group class labels from "email" to "title". Change the 2nd form-group class labels from "password" to
+# "content". Remove the entire divs containing "form-check" and "Forgot Password".
+
+# @ 8:15. Add the link to this create_post route in the navigation bar so logged-in users can get to it easily.
+# Go to the layout.html and scroll to line 36 to see the conditional that allows links to display when a current
+# user is logged in. Add the new link above the Account link ->
+# #             <a class="nav-item nav-link" href="{{ url_for('new_post') }}">New Post</a>
+# Test all the changes in the browser.
+
+# @ 10:08. The home page currently has dummy data. It's time to setup to save actual posts and delete old data.
+# In the routes.py file on line 120(a.k.a. 107 after code deletions below), insert new code. You can use author 
+# instead of userID because it's cleaner. Make sure to add and commit the post into the database. ->
+# #         post = Post(title=form.title.data, content=form.content.data, author=current_user)
+# #         db.session.add(post)
+# #         db.session.commit()
+
+# @ 11:55. DELETE the dummy data from the home page route at the top of the file so that the new posts show. ->
+# # posts = [
+# #     {
+# #         "author": "John Smith",
+# #         "title": "Blog Post 1",
+# #         "content": "First post content",
+# #         "date_posted": "September 10, 2006",
+# #     },
+# #     {
+# #         "author": "Jane Doe",
+# #         "title": "Blog Post 2",
+# #         "content": "Second post content",
+# #         "date_posted": "February 20, 2010",
+# #     },
+# # ]
+# Fix the home route to query for all actual posts by adding in line 14 of code ->
+# #     posts = Post.query.all()
+
+# @ 13:57. Right now the post is displaying too much info for date/time and user. We will also put the user 
+# profile pic next to the post. Currently, styles for this are in the CSS, so you just have to add the HTML to
+# use them. Open home.html and alter lines 7-8 with the following ->
+# #         <a class="mr-2" href="#">{{ post.author.username }}</a>
+# #         <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
+
+# @ 15:42. Display the users image next to the post; add an image tag in the content-section of home.html 
+# file.->
+# #   <img class="rounded-circle article-image" src="{{ url_for('static', filename='profile_pics/' + 
+# # post.author.image_file) }}">
+# Test the browser.
+
+# @ 18:05. Add functionality to update or delete posts. First, make a route to a specific page for a single 
+# post. In the routes.py file, create a route where the ID of a post is part of the route in the form of an 
+# interger. Use the get_or_404 that will either get the post with certain ID or go to a 404 error page if it 
+# does not exist.
+# If the post does exist then it should render a template that returns that post. Code snippet. ->
+# # @app.route("/post/<int:post_id>")
+# # def post(post_id):
+# #     post = Post.query.get_or_404(post_id)
+# #     return render_template('post.html', title=post.title, post=post)
+
+# @ 20:58. Create the post template with a new file called post.html. Copy/Paste the home.html code and alter it
+# so that the loop block is gone and the h2 does not have a link in it; keep the class="article-title".
+# Now go to the home.html file and replace the empty link to allow linking to individual posts. ->
+# #     <h2><a class="article-title" href="{{ url_for('post', post_id=post.id) }}">{{ post.title }}</a></h2>
+# Test the browser by logging out of the current user and creating a new post from the 2nd user, 
+# TestUser@demo.com with password "testing2". You should see both posts. If you hover over a post link, you will
+# see the path on the bottom left of the screen. The posts are denoted by numerical creation. If you manually 
+# try to go to a non-existent post, you should be redirected to the 404 error page.
+
+# @ 25:30. Add ability to update and delete a post. In routes.py, create a new route that's similar to the last
+# one created but rename it with the word "update". You want this route to require a logged-in user, since only
+# they should be able to view this area. The same functionality to get a post by ID and display a 404 error 
+# should be included. Create a check conditional so that only the user that created the post can update it; if 
+# the user doesn't match the post then the operation should be aborted and an error 403 is displayed. Import the
+# abort extension in the flask imports. Code snippet. ->
+# # @app.route("/post/<int:post_id>/update")
+# # @login_required
+# # def update_post(post_id):
+# #     post = Post.query.get_or_404(post_id)
+# #     if post.author != current_user:
+# #         abort(403)
+# #     form = PostForm()
+# #     return render_template("create_post.html", title="Update Post", form=form)
+# Now test this code by logging out and back in as the 1st user, then click on the 2nd post made by another user
+# and manually try to update it by adding "/update" at the end of the browser nav bar link. It should show you 
+# the forbidden error. If you go back to the home page and try to update the post that belongs to this user, it
+# should take you to the "New Post" form. The issue here is that you want the original post data to show along 
+# with this, as well as the word "New" in the legend be changed to "Update". Fix this by adding a legend value 
+# that is passed into each template. This will also be updated in the "New Post" route too!
+# @ 30:25. Now you will display the legend within the create_post.html template. Open the file and add {{}} ->
+# #             <legend class="border-bottom mb-4">{{ legend }}</legend>
+# Go back to the routes.py file and add code after line 128 in the "update" route section. ->
+# #     form.title.data = post.title
+# #     form.content.data = post.content
+
+# @31:36. Add the logic to update the post if the form validates. Set up the "Update" route to accept POST 
+# requests that forms submit to. Include the conditional that will allow update upon validation for the title 
+# and content. Commit to the database. (Note: you don't need to "add" to the database here because it already is
+# in the database; you're just updating the info this time). You will add a flash message for successful update 
+# and redirect to the post ID of the current post. Code snippet. ->
+# #     if form.validate_on_submit():
+# #         post.title = form.title.data
+# #         post.content = form.content.data
+# #         db.session.commit()
+# #         flash('Your post has been updated!', 'success')
+# #         return redirect(url_for('post', post_id=post.id))
+
+# @ 33:35. Put the sending of form data (after line 136) in it's own conditional to populate when it's a GET 
+# request. Use elif.
+# Test the browser by trying to "update" a post (remember to enter the url manually for now). You should see the
+# changes of "Update" in the legend and the previous post info populated.
+
+# @ 35:07. Create the ability to delete a post for a user and add the links for delete and update to the 
+# template. A double confirmation of deleting a post will be made to make it hard for a user to delete a post on
+# accident. Open the post.html file and create code blocks at the end of the article-metadata div that have a 
+# conditional that will only show the links if the post belongs to the current user. Put the link codes inside 
+# the code block. The "Update" link will be an anchor tag style but the "Delete" link will be a button. The 
+# "Delete" button will use a bootstrap modal, hence why it's a link. The modal code is directly from the 
+# bootstrap website. Link-> https://getbootstrap.com/docs/4.0/components/modal/
+# Copy the toggle and target portion of the code into the last part of the delete button class. ->
+# # <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal" data-\
+# # target="#deleteModal">Delete</button>
+# Then add the rest of the modal code at the very end of the article tag, still within the code block ending. 
+# Change the "exampleModal" label to "deleteModal". Test the browser for these changes by going to a post owned
+# by the logged user. You should see the Update and Delete links and a pop-up if you hit Delete.
+
+# @ 41:14. Fix the margin of the Update link with mt-1 & mb-1 (margin top and margin bottom)->
+# # <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{{ url_for('update_post', post_id=post.id)\
+# # }}">Update</a>
+# Alter the modal pop-up by changing the "Modal title" to "Delete Post?" and deleting the modal-body div.
+# Replace the button to save changes with a form with an action to submit. ->
+# #                 <form action="{{ url_for('delete_post', post_id=post.id) }}" method="POST">
+# #                     <input class="btn btn-danger" type="submit" value="Delete">
+# #                 </form>
+
+# @ 44:05. Create the delete_post route that was just coded above. This will be similar to the Update route.
+# # @app.route("/post/<int:post_id>/delete", methods=["POST"])
+# # @login_required
+# # def delete_post(post_id):
+# #     post = Post.query.get_or_404(post_id)
+# #     if post.author != current_user:
+# #         abort(403)
+# #     db.session.delete(post)
+# #     db.session.commit()
+# #     flash("Your post has been deleted!", "success")
+# #     return redirect(url_for("home"))
+# Test your code!

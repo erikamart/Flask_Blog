@@ -1,0 +1,150 @@
+########
+# Part 6 - User Authentication ->
+# This is to learn how to add a user and authenticate them so they can log in/out and create posts.
+
+# Need to hash passwords to protect user information if it was ever hacked. The extension bcrypt is good to use.
+# # ~$ pip install flask-bcrypt
+
+# See how it works in python by importing the class ->
+# # ~$ python
+# # >>> from flask_bcrypt import Bcrypt
+# Create an instance of the class and pass in a temp password to hash ->
+# # >>> bcrypt = Bcrypt()
+# # >>> bcrypt.generate_password_hash('testing')
+# This creates a password hash in bytes denoted with 'b'. If you want a string you can decode to UTF-8 by ->
+# # >>> bcrypt.generate_password_hash('testing').decode('utf-8')
+
+# Note that each time bcrypt is run, you will get a different hash. To check against original password hashes
+# you need another method to see if they're equal by saving the 1st hash as a variable ->
+# # >>> hashed_pw = bcrypt.generate_password_hash('testing').decode('utf-8')
+# Now use the check_password method by passing in a different word other than 'testing'. The result should be
+# false. ->
+# # >>> bcrypt.check_password_hash(hashed_pw, 'password')
+# If you pass in the correct word of 'testing', the result should be True ->
+# # >>> bcrypt.check_password_hash(hashed_pw, 'testing')
+# Now go add the imports and calls to the __init__.py file to initialize.
+
+# In the routes.py file, go to the register route to fix the logic.->
+# # hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+# #        user = User(username=form.username.data, email=form.email.data, password=hashed_password)
+# #        db.session.add(user)
+# #        db.session.commit()
+# #        flash('Your account has been created! You are now able to log in', 'success')
+# #        return redirect(url_for('login'))
+
+# Run the app to test it. Username = CoreyMS, email = CoreyMSchafer@gmail.com, password = testing1
+# If all works fine, shutdown the app, and go see if the db recorded the new account ->
+# # ~$ python
+# # >>> from flaskblog import db
+# # >>> from flaskblog.models import User
+# # >>> user = User.query.first() 
+# # >>> user
+# The result should show-> User('CoreyMS', 'CoreyMSchafer@gmail.com', 'default.jpg')
+# Now look at the password. It should show a hashed string of characters ->
+# # >>> user.password 
+
+# If you go back to the routes.py file for the register code, you'll find that currently there's no logic to stop
+# a user from trying to sign up with already used credentials. If you test this by registering again, the app
+# will throw an error message screen that can be debugged. (REMEMBER to never leave production apps in debug mode
+# because the error screen can give too much information to hackers!) The best fix is to create a custom form 
+# function within the form.py file. The basic template of this function is as follows; customize as needed. ->
+# # def validate_field(self, field):
+# #        if True:
+# #            raise ValidationError('Validation Message')
+
+# @ 19:30. It's time to create a good login system so users can log in/out. This is easily done with the use of a
+# flask extension called flask-login. ->
+# # ~$ pip install flask-login
+# Add the needed code to the __init__.py file ->
+# # from flask_login import LoginManager
+# # login_manager = LoginManager(app)
+# @ 22:44 Create a function with a decorator called user loader in the models.py file. The template info of this
+# code can be grabbed from the documentation of the extension. ->
+# # @login_manager.user_loader
+# # def load_user(user_id):
+# # 	return User.query.get(int(user_id))
+
+# @ 22:50. The extension will expect the User model to have 4 certain attributes and methods: 
+# 	- Authenticated (which returns True if valid credentials were provided)
+# 	- Is Active
+# 	- Is Anonymous
+# 	- GetID method
+# Rather than add all the above methods & attributes manually, the extension provides the ability to inherit them 
+# by importing a class from flask_login called UserMixin. Be sure that you are inheriting from BOTH the db.Model 
+# and UserMixin so that you don't overwrite the DB model.
+# @ 24:15. Now modify the login route in routes.py file. Previously the logic was to check for hard coded username
+# and password. But now we need the conditional to check for any valid credentials. So to fix, delete  ->
+# # if form.email.data == 'admin@blog.com' and form.password.data == 'password':
+# #          flash('You have been logged in!', 'success')
+# #          return redirect(url_for('home'))
+
+# @ 24:46. The user will be logging in with an email, so create a query to check the db for that ->
+# # user = User.query.filter_by(email=form.email.data).first()
+# Then create a conditional in the query that checks simultaneously if the email exists and password verifies ->
+# # 	if user and bcrypt.check_password_hash(user.password, form.password.data)
+# #         login_user(user, remember=form.remember.data)
+# #         return redirect(url_for('home'))
+# Test the site by running it and attempting to login with non-used credentials -> C@demo.com, password
+# The result should kick you back to the login page and flash the red warning flag
+# Now try to log in with actual credentials -> CoreyMSchafer@gmail.com, testing1
+# The result should be successful and take you to the home page.
+
+# Currently, if a user is logged into their account, they are able to click other links and still access pages as if
+# they're not logged in. Fix the logic to prevent this and navigate a user back to their homepage by importing the
+# "current_user" variable from the flask_login extension in the routes.py file for the register & login routes->
+# #     if current_user.is_authenticated:
+# #          return redirect(url_for('home'))
+
+# @ 31:25. Replace the login link with a logout one when the user is logged in and allow the user to logout.
+# First, in the routes.py file import the logout_user function at the top of the file and at the end add logic ->
+# # @app.route("/logout")
+# # def logout():
+# #    logout_user()
+# #    return redirect(url_for('home'))
+# @ 32:45 Now go to the layout.html file to create the logout link. This will use a jinja2 conditional and
+# the current_user.is_authenticated function like before. Incorporate code blocks around the existing Login
+# & Register links ->
+# #             {% if current_user.is_authenticated %}
+# #	        <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+# #             {% else %}
+# #             <a class="nav-item nav-link" href="{{ url_for('login') }}">Login</a>
+# #             <a class="nav-item nav-link" href="{{ url_for('register') }}">Register</a>
+# #             {% endif %}
+
+# @ 35:08. Now you need to create a restriction on certain routes so that only the logged in user can go to them.
+# In the routes.py file at the bottom, create the account route and return an account template ->
+# # @app.route("/account")
+# # def account():
+# #     return render_template('account.html', title='Account')
+# Now go to the templates directory and create a new file called "account.html". Copy/Paste the info from about.html.
+# In the layout.html, create the new account link above the logout link. Save all files and test. You will find that 
+# if you hit "Logout" and manually try to enter the "/Account" page you can get there but the screen is blank since
+# it doesn't know who the user is and what to display.
+# @ 38:25. You only want the logged in user to access the account page. To easily fix this you can use the 
+# login_required decorator from the flask_login extension. In the routes.py file, import the login_required extension
+# at the top of the file and then add the following line just below the account decorator->
+# # @login_required
+# Then alter the __init__.py file to tell the extension where the login route is located (line 12). Note: the view
+# that you pass into the login_manager is the function name of the route which is the same thing you would pass into
+# a URL_for function. ->
+# # login_manager.login_view = 'login' 
+# Test by manually typing in "/account", it redirects you to login and once you do, you see the user info.
+
+# @ 40:55. The flashed message that appeared in the previous testing showed up ugly. We've been using the flash 
+# categories to color other alerts. Lets fix this to the bootstrap classes category of "info" which appears blue.
+# Go to the __init__.py file and add code below the last edit (line 13).
+
+# @ 41:45. The second cleanup item is for how the page redirects after you attempt to see account info and are
+# prompted to log in. Once you log in, it doesn't go to the account info, you have to explicitly click again. 
+# During this moment, a query parameter called "next" was added to the URL of the page we were trying to access.
+# The "next" query parameter is equal to the route that we were tryin to log into before. It looks like--
+# http://127.0.0.1:53837/login?next=%2Faccount
+# Use this in the login route to access that query parameter to see if it exists and then redirect the user to it
+# after log in. In the routes.py file, import the "request" extension from flask, then update the login route after
+# line 61 and update the return line with a ternary conditional. Insert/Update lines ->
+# #             next_page = request.args.get('next')
+# #             return redirect(next_page) if next_page else redirect(url_for("home"))
+# NOTE: args is a dictionary, but you don't want to access "next" using [] and key name because this can throw an
+# error if the key doesn't exist; also the "next" parameter is going to be optional here, hence use of GET method.
+# The ternary condtional is saying redirect to "next" if the page exists, but if it returns none then redirect home.
+# Test that this works properly by manually going to "/account" page, then logout, and login.

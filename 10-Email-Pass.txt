@@ -1,0 +1,193 @@
+########
+# Part 10 - Email_Password_Reset ->
+# Use email to allow a user to reset their passwords. This will generate a secure time sensitive token to ensure
+# only that specific user can reset their password, and then send an email with that reset information. 
+# This uses a package called itsdangerous. To test this in CLI for example, import a specific Serializer and 
+# pass in a secret key and an expiration time of 30 seconds. Then generate a token with the dumps method and 
+# send a payload that is a dictionary; this will just be equal to the user_id. Also decode this in utf-8 
+# otherwise it will be in bytes format. Look at the token and you will see it's a long random string of 
+# characters. To check if this is a valid token, use the loads method and pass in the token. Wait 30 seconds, 
+# try to look again and you will see it's expired.->
+# # >>> python
+# # >>> from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+# # >>> s = Serializer('secret', 30)
+# # >>> token = s.dumps({'user_id': 1}).decode('utf-8')
+# # >>> token
+# # 'eyJhbGciOiJIUzUxMiIsImlhdCI6MTU3Mzk2MzQ1MCwiZXhwIjoxNTczOTYzNDgwfQ.eyJ1c2VyX2lkIjoxfQ.a0NbIAsZxfa25IJ9Z\
+# # OmbZ3zZCQTi_FyTnqA5-bqa5X_iY-ow3BJjIxdLhB1gy51tRjD1-OLVqQqRl4Ih21_Czg'
+# # >>> s.loads(token)
+# # 
+# # >>> s.loads(token)
+# # Traceback (most recent call last):
+# #   File "<stdin>", line 1, in <module>
+# #   File "/home/username/miniconda3/envs/flaskblog_env/lib/python3.7/site-packages/itsdangerous/jws.py", line 
+# # \205, in loads date_signed=self.get_issue_date(header), itsdangerous.exc.SignatureExpired: Signature expired
+# # >>>
+
+# @ 3:00. Open the database models.py and add some methods to the user model that creates and validates tokens. # Import the same classes used in the CLI example into the top of the file and include "app". Then within the 
+# User model, create a method called get_reset_token and pass in an instance of the user that expires in 30min.
+# Within this new method, create a Serializer object and pass in a secret key with the expiration time and 
+# return a token created from the serailzer. The payload will be the instance of the user and be decoded to 
+# utf-8. Code snippet. ->
+# #     def get_reset_token(self, expires_sec=1800):
+# #         s = Serializer(app.config['SECRET_KEY'], expires_sec)
+# #         return s.dumps({'user_id': self.id}).decode('utf-8')
+
+# @ 6:07 Create a second method that verifies a token: Take a token as an argument, then create a serializer 
+# object with the secret key, however, this time it will not need to pass in the expires_sec. Because it's 
+# possible to get an exception with an invalid or expired token, put this code inside a Try/Except block: You're
+# trying to get the user_id by loading that token and getting it out of the payload that was passed in. If that
+# doesn't run smoothly then you will catch the exception and return None from the method. If you are able to get
+# the user_id without throwing an exception then you just want to return the user with that ID. Code snippet. ->
+# # 	@staticmethod
+# #     def verify_reset_token(token):
+# #         s = Serializer(app.config['SECRET_KEY'])
+# #         try:
+# #             user_id = s.loads(token)['user_id']
+# #         except:
+# #             return None
+# #         return User.query.get(user_id)
+# @ 7:50. Notice the above method doesn't do anything with the instance of this user (it never uses the "self"
+# variable). This is because when you have a method like this, you need to tell Python that this is a static 
+# method. This is done with a simple decorator @staticmethod, which will tell python not to expect the "self"
+# parameter as an argument; it will only be accepting the token as an argument.
+
+# @ 8:25. Now create two new forms for the routes so that the user can send an email and create a reset link. 
+# Open the forms.py file. The first form will be RequestResetForm. You want to validate that an account exists
+# for the email address so the code will be similar to the registration form. Code Snippet. ->
+# # class RequestResetForm(FlaskForm)
+# #     email = StringField("Email", validators=[DataRequired(), Email()])
+# #     submit = SubmitField("Request Password Reset")
+# # 
+# #     def validate_email(self, email):
+# #         user = User.query.filter_by(email=email.data).first()
+# #         if user is None:
+# #             raise ValidationError("No account exists with that email. You must register first.")  
+
+# @ 10:45. The second form will be for when the password is reset. There will be two password fields to type the
+# new password and then confirm the password. Again, these are similar to the registration form. Code Snippet ->
+# # class ResetPasswordForm(FlaskForm):
+# #     password = PasswordField("Password", validators=[DataRequired(), Length(min=8)])
+# #     confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo("password")])
+# #     submit = SubmitField("Reset Password")
+
+# @ 11:52. Create the routes and templates to handle the forms. The first route will be where the user will 
+# request to reset their password. In the routes.py file, import the two forms just created. Copy/Paste the 
+# first two lines of an existing route to start (like the /post/new route) and alter it. Put the same check in
+# this route that is in the Login route to make sure a user is logged out before they reset their password. Now
+# create the form and refer to a new template called "reset_request.html". Code snippet. ->
+# # @app.route("/reset_password", methods=["GET", "POST"])
+# # def reset_request():
+# #     if current_user.is_authenticated:
+# #         return redirect(url_for("home"))
+# #     form = RequestResetForm()
+# #     return render_template("reset_request.html", title="Reset Password", form=form)
+
+# @ 14:56. Now go create the new template where the user will request to reset their password, called 
+# reset_request.html and copy/paste the code from the login.html file to start. Get rid of the form-group for 
+# the password, the div for form-check, the section of Forgot Password, and the div for Need an Account.
+
+# @ 16:44. Now create the route where the user will actually reset their password. To make sure it is actually 
+# the user, you need to make sure that the token and email given are active. You'll get the token from the URL 
+# that was sent and know that it's them when they navigate to this route. Remember that in the models.py file 
+# for the verify_reset_token, it just takes in a token as an argument and if it is valid then it'll return the 
+# user with that user ID. User ID was the payload that was passed in to the initial token. Put in a conditional
+# in case the token is either invalid or expired. It should flash a warning message with the error. If the token
+# is valid then it should redirect to the "reset_token.html" template. Code snippet. ->
+# # @app.route("/reset_password/<token>", methods=["GET", "POST"])
+# # def reset_token(token):
+# #     if current_user.is_authenticated:
+# #         return redirect(url_for("home"))
+# #     user = User.verify_reset_token(token)
+# #     if user is None:
+# #         flash('That is an invalid or expired token', 'warning')
+# #         return redirect(url_for('reset_request'))
+# #     form = ResetPasswordForm()
+# #     return render_template("reset_token.html", title="Reset Password", form=form)
+
+# @ 20:47. Now create the template for the user to actually reset their password. It will be similar to the
+# reset_request.html so copy/paste that in a new file called reset_token.html and alter it. Change all the words
+# that say "email" to "password". Copy the entire form-group and paste it below; then change the "password" to
+# "confirm_password".
+
+# @ 22:04. In routes.py, go add a validate upon submit conditional to handle the forms being submitted. This 
+# change will be done right after the line of code that creates the form. The code will query to grab the first
+# user with that email. Then use the "send_reset_email" function (seperately created for the sending of an email
+# and with the logic temporarily using "pass" to be fixed later) that passes in the user, sends a flash message 
+# with a class of "info" to notify that an email has been sent, and redirects back to the login page. Code 
+# Snippet ->
+# #     if form.validate_on_submit():
+# #         user = User.query.filter_by(email=form.email.data).first()
+# #         send_reset_email(user)
+# #         flash('An email has been sent with instructions to reset your password', 'info')
+# #         return redirect(url_for('login'))
+
+# @ 24:33. Fill out the logic for the "send_reset_email" function to use the flask mail extension. Install the 
+# ext first with ->
+# # ~$ pip install flask-mail
+
+# @ 25:00. Go to the __init__.py file and import the extension and set some constants so the app can know how to 
+# send mail. You'll need a mail server, mail port, specification to use TLS, your actual email username & 
+# password. Then initialize the extension. (Remember that you're using an environment variable to handle 
+# sensitive information, such as your email password, so it won't be public.) Code Snippet. ->
+# # app.config["MAIL_SERVER"] = "smtp.googlemail.com"
+# # app.config["MAIL_PORT"] = 587
+# # app.config["MAIL_USE_TLS"] = True
+# # app.config["MAIL_USERNAME"] = os.environ.get("EMAIL_USER")
+# # app.config["MAIL_PASSWORD"] = os.environ.get("EMAIL_PASS")
+# # mail = Mail(app)
+
+# SIDE NOTE: To setup the environment variable in Linux, navigate in CLI to your home directory and alter the 
+# .bashrc at the top of the file with your real credentials relating to the variables being used. Be sure to
+# replace "yourEmail" and "yourPassword" with your actual credentials. Then source the file to activate it.->
+# # ~$ cd ~
+# # ~$ nano .bashrc
+# # export EMAIL_USER="yourEmail"
+# # export EMAIL_PASS="yourPassword"
+# # Ctrl + x
+# # y
+# # Enter
+# # ~$ source ~/.bashrc
+
+# @ 28:08. Open the routes.py file. Import the Mail extension and Message class to be able to send a message.
+# Now fix the logic in the "send_reset_email" function. Get the token using the method added earlier in 
+# models.py, "get_reset_token". Then sen the email with the URL that has the reset token by using the message 
+# class. Be careful not to spoof a sender, because if you pretend to be somebody that you're not you'll end up 
+# in the spam folder; so use something coming from your domain. Then pass in the recipient. For the body of the 
+# message, use a multi-line F string (Note: Don't use tabs in the message or they will appear!). The F string 
+# will pass in the value for "url_for" with the "reset_token route", and have the token=token, and use 
+# _external=True to get an absolute URL rather than a relative URL because you need the link in the email to 
+# have the full domain. Code snippet ->
+# # def send_reset_email(user):
+# #     token = user.get_reset_token()
+# #     msg = Message("Password Reset Request", sender="noreply@demo.com", recipients=[user.email])
+# #     msg.body = f"""To reset your password, visit the following link: 
+# # {url_for('reset_token', token=token, _external=True)}
+# #         
+# # If you did not make this request then ignore this email and no changes will be made.
+# # """
+
+# @ 33:30. Now you need to handle the form submission when a user actually changes their password. This will be
+# similar to the register route. Go to that section and copy the Validate_on_submit conditional code. Paste it 
+# into the reset_token route below where the form = ResetPasswordForm() line of code. Delete the line of code 
+# for the user because it's already up above. Replace the db.session for adding with user.password =
+# hashed_password. Then update the flash message. Code snippet. ->
+# #     if form.validate_on_submit():
+# #         hashed_password = bcrypt.generate_password_hash(form.password.data).decode("utf-8")
+# #         user.password = hashed_password
+# #         db.session.commit()
+# #         flash("Your password has been updated! You are now able to log in", "success")
+# #         return redirect(url_for("login"))
+
+# @ 35:28. Add a link to the reset page in the application. Open the login.html template and scroll to the 
+# bottom. Incorporate the actual link. Code snippet. ->
+# #         <a href="{{ url_for('reset_request') }}">Forgot Password?</a>
+# Also relocate this link to be inside the div tags above so that it will appear next to the login button.
+
+# @ 38:18. There is a problem with the code in routes.py. The code to send an email is missing. Include it now 
+# in the "send_reset_email" routes area. Code snippet. ->
+# #     mail.send(msg) 
+
+# Test in browser. REMEMBER that the sender email address on line 181 of the routes.py file must be updated to 
+# your actual sending address for your final production code!!!!! Also make sure you have a valid user email to 
+# test.

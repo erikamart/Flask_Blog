@@ -1,0 +1,44 @@
+########
+# Part 14 - Custom Domain Name for the Application ->
+# The process of buying a domain name to host the application. Register a domain name from Namecheap.com. Search
+# for a domain name that is available, add it to your cart, and click on "View Cart".
+
+# @ 3:15. In the cart you will see offers/options on duration of purchase per year and WhoisGuard. WhoisGuard is
+# recommended because it protects your privacy with buying a domain. You enter a lot of personal info when
+# buying a domain and if you don't use some type of protection then that info is available to people who try to
+# look you up. If you open your CLI in linux and type in the command whois and the name of the domain you want
+# to know, it will list out all the info. ->
+# # ~$ whois <domain>
+# WhoisGuard blocks the most personal info parts and lists only the registering site (in this case, namecheap).
+
+# @ 5:29. Pay Now for your domain order. You don't need all the other add-ons. The payment shouldn't be more
+# than $10. Once purchased, navigate to the Domain List to view your newly owned domain name. 
+
+# @ 6:15. Now go to the linode site. You'll see in the dashboard the linodes you've made. Go to the "Get Help"
+# area and do a search for DNS Manager. Follow the link provided and view the documentation on how to set-up a
+# domain name. The link is -> https://www.linode.com/docs/platform/manager/dns-manager/
+# Scroll down the page, you'll see the section "DNS Set-Up Checklist". You've done step 1; now on to step 2.
+
+# @ 7:25. Click the link from step 2 and view the 5 linode server names. Copy them. Go to your Namecheap.com
+# account and Paste the server names into your domain "Nameservers" area after clicking the "Manage" button for
+# your domain. The linode server names are ->
+# #     ns1.linode.com
+# #     ns2.linode.com
+# #     ns3.linode.com
+# #     ns4.linode.com
+# #     ns5.linode.com
+# It will take a few hours for the change to take affect. While you're waiting you can move on to step 3.
+
+# @ 10:03. Step 3 of the "DNS Set-Up Checklist" is add a domain, and then start adding some basic DNS records.
+# Go back to the namecheap.com account and view the "Domains" area. There you will see a button to "Add a
+# Domain"; click it. In the fields provided, fill in the info for Domain, email address, and optional tags.
+# Click on create when done. 
+
+# @ 11:38. Use the guide provided from the Linode site, below the checklist, to fill in the DNS records fields.
+# You will be adding an "AAAA" record. Fill in the fields with the info of the flaskblog ip_servername.
+
+# @ 13:45. Step 4, set the reverse DNS. The Linode site instructions may be outdated. Click on the section for
+# "Linodes", then click on the "Networking" tab, and scroll down to the IPv4 section. Edit the "Reverse DNS" to
+# be your domain name from namecheap. When you save you'll get an error. This is normal; changes take time to 
+# take effect, about 15-30min. Once it works, test the website by navigating to it and clicking on the site to 
+# verify functionality is good.

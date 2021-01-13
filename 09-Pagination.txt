@@ -1,0 +1,155 @@
+########
+# Part 9 - Pagination ->
+# Pagination so you aren't pulling down too many posts at once and sort posts from newest to oldest. You want to
+# only show a short amount of posts and have a link at the bottom to get to the other posts.
+# Use Corey's JSON file to input the 25 different posts he made to work with the building of this code.
+# Link-> https://github.com/CoreyMSchafer/code_snippets/blob/master/Python/Flask_Blog/snippets/posts.json
+# Or you can just make at least 10 of your own posts. Once done, run the info in CLI to see how it looks ->
+# # ~$ python
+# # >>> from flaskblog.models import Post
+# # >>> posts = Post.query.all()
+# # >>> for post in posts:
+# # ...   print(post)
+# # ...
+# You should see all the posts listed. Now see how it looks if you use a Post.query.paginate query.->
+# # >>> posts = Post.query.paginate()
+# # >>> posts
+# # <flask_sqlalchemy.Pagination object at 0x10bde5cc0>
+# The above means this is a pagination object. Let's see what attributes & methods this object has ->
+# # dir(posts)
+# The list given by the command shows it's an object that gives information about the current page you're on,
+# how many posts there are per page,etc.. Look at how many posts per page there are (default is 20) ->
+# # >>> posts.per_page
+# Look at the current page (it should be 1) ->
+# # >>> posts.page
+# Now print out the individual items like before (The amount you entered should display) ->
+# # >>> for post in posts.items:
+# # ...   print(post)
+# # ...
+# @ 4:25. To see posts beyond the first page of items, you can specify the page number. (Only if you have beyond
+# 20 items, which is the default. Otherwise you'll get a python error) ->
+# # >>> posts = Post.query.paginate(page=2)
+# # >>> for post in posts.items:
+# # ...   print(post)
+# # ...
+# @ 5:15. If the default of 20 items is too much, then you can specify fewer per page to view. ->
+# # >>> posts = Post.query.paginate(per_page=5)
+# # >>> posts.page
+# # 1
+# # >>> for post in posts.items:
+# # ...   print(post)
+# # ...
+# Now re-run the query specifying 5 items per page on page 2. Then loop thru again & print to see the items ->
+# # >>> posts = Post.query.paginate(per_page=5, page=2)
+# # >>> posts.page
+# # 2
+# # >>> for post in posts.items:
+# # ...   print(post)
+# # ...
+
+# @ 6:20. To see the total number of posts in all of the pages, use the total attribute. ->
+# # >>> posts.total
+# # 10
+
+# @ 6:40. In routes.py file, in line 14, alter the code to use paginate and only allow 5 items per page ->
+# #    posts = Post.query.paginate(per_page=5)
+
+# @ 7:19. To grab the page that you want, you pass a query parameter in the URL. Set the default page=1 and 
+# set a type=int to ensure that an error will be thrown if someone tries to pass something other than a number.->
+# #     page = requests.args.get('page', 1, type=int)
+# #     posts = Post.query.paginate(page=page, per_page=5)
+# Now you have to go and update the home.html template to accomodate for now having a pagination object. You
+# have to add .items ->
+# # {% for post in posts.items %}
+# Test in browser. You should only see 5 posts on the page. There are no links yet, but you can manually pass in
+# a page number to view via the URL bar; add "?page=2" to the very end of the existing URL. You should see the 
+# next 5 posts of the set.
+
+# @ 9:35. Now update the template to see the links to the other pages. You want to temporarily change line 15 in
+# the routes.py file to a small number per_page while working on the links because you want to initially have a 
+# lot of links to display for future post growth. Test this using python in CLI to see what this will look like.
+# ->
+# # ~$ python
+# # >>> from flaskblog.models import Post
+# # >>> posts = Post.query.paginate(page=6, per_page=1)
+# # >>> for page in posts.iter_pages():
+# # ...   print(page)
+# # ...
+# # 1
+# # 2
+# # None
+# # 4
+# # 5
+# # 6
+# # 7
+# # 8
+# # 9
+# # 10
+# # >>>
+# The None in the list is representative of a marker that indicates there's more pages at the beginning and the
+# end as well as what the current page is.
+
+# @ 12:06. In home.html template, open a for loop to loop over the pages. None values will be displayed as 
+# ellipses. Make an if else statement to link to the page->
+# # {% for page_num in posts.iter_pages() %}
+# #     {% if page_num %}
+# #         <a class="btn btn-outline-info mb-4" href="{{ url_for('home', page=page_num) }}">{{ page_num }}</a>
+# # {% else %}
+# #     ...
+# # {% endif %}
+# # {% endfor %}
+# Test your browser.
+
+# @ 15:30. Customize the amount of links showing and style the page to show what page you're on. Pass in a few 
+# args to iter pages. Code snippet is as follows->
+# # {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+# # 	{% if page_num %}
+# # 		{% if posts.page == page_num %}
+# # 			<a class="btn btn-info mb-4" href="{{ url_for('home', page=page_num) }}">{{ page_num}}\
+# # </a>
+# # 		{% else %}
+# # 			<a class="btn btn-outline-info mb-4" href="{{ url_for('home', page=page_num) }}">\
+# # 			{{ page_num }}</a>
+# # 		{% endif %}
+# # 	{% else %}
+# # 	...
+# # 	{% endif %}
+# # {% endfor %}
+
+# @18:45. Change the posts per page back to a higher number so that things display correctly. On line 15 of  the
+# routes.py file.
+# @ 19:20. Change the current viewing order of the posts to have the oldest post at the bottom and newest at the 
+# top. In the routes.py file on line 15, incoroporate the order_by function. ->
+# #     posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
+
+# @ 21:23. Currently, the username of each post displays as a link, but it doesn't go anywhere if clicked. Fix
+# this by building a route that will display only the posts from a particular user on clicked link. In routes.py
+# copy/paste the home route at the bottom of the file to alter. NOTE: a "\" is used in code to split a long 
+# line. Code Snippet. ->
+# # @app.route("/user/<string:username>")
+# # def user_posts(username):
+# #     page = request.args.get('page', 1, type=int)
+# #     user = User.query.filter_by(username=username).first_or_404()
+# #     posts = Post.query.filter_by(author=user)\
+# #         .order_by(Post.date_posted.desc())\
+# #         .paginate(page=page, per_page=5)
+# #     return render_template("user_posts.html", posts=posts, user=user)
+
+# @ 24:40. In the template folder, create a new file called "user_posts.html" Copy/Paste home.html info into it.
+# On line 3 of this template, it will specify a user variable that will display the total number of posts over 
+# the paginated links. Code Snippet. ->
+# #     <h1 class="mb-3">Posts by {{ user.username }} ({{ posts.total }})</h1>
+# The for loop will mostly stay the same, with exception to the user post route href that currently displays 
+# "#".->
+# # {{ url_for('user_posts', username=post.author.username) }}
+# Update this link in the home.html & post.html files! Sub-templates will be later made to solve this issue of
+# having to paste the same info in multiple areas.
+
+# @ 28:05. Got back to the user_posts.html and fix the pagination links at the bottom. These should not link to
+# the home page. It should link to the user_posts route. Code Snippet. ->
+# # <a class="btn btn-info mb-4"
+# #     href="{{ url_for('user_posts', username=user.username, page=page_num) }}">{{ page_num }}</a>
+# # {% else %}
+# # <a class="btn btn-outline-info mb-4"
+# #     href="{{ url_for('user_posts', username=user.username, page=page_num) }}">{{ page_num }}</a>
+# Test in browser.

@@ -1,0 +1,26 @@
+###### Flask Series NOTES ############
+# Part 1 - Getting Started ->
+# Recreated a new environment on WSL Ubuntu called "flaskblog_env" and set the channel
+# priority to strict for conda-forge. Create "flaskblog" directory for the project in
+# this environment and copy code from Coreys github to get started. Link ->
+# https://github.com/CoreyMSchafer/code_snippets/tree/master/Python/Flask_Blog/
+# \01-Getting-Started
+
+# Install flask. ->
+# # ~$ pip install flask
+
+# Set an environment variable to the file that we want to be our flask application. 
+# We have flaskblog.py as our file so we'll use FLASK_APP as the variable-->
+# # ~$ export FLASK_APP=flaskblog.py
+# On WINDOWS the command would be:
+# # ~$ set FLASK_APP=flaskblog.py
+
+# Run the application-->
+# # ~$ flask run
+# You will be prompted with an URL to copy and paste into your browser to view.
+# At this point, any changes to your code will only be updated if you stop and rerun
+# the flask app.
+# If you have an error, put the following line of code at the top of the file --> #!/home/username/python/envs/flaskblog_env/bin/python
+
+# Set the debugger to show saved changes to the file:
+# # ~$ export FLASK_DEBUG=1

@@ -1,0 +1,4 @@
+###### Flask Series NOTES ############
+
+# Part 2 - Templates -> 
+# __name__ is a special variable in python that is just the name of the module.

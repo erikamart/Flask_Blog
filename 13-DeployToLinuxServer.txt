@@ -1,0 +1,463 @@
+########
+# Part 13 - Deploy to a Linux Server ->
+# Explore different options to deploy to a server but in the end deploy using nginx and g unicorn. 
+
+# @ 3:45. Using Linode.com you will create a server from scratch. Click on the upper left corner button that 
+# says "Create" and then on "Linode" for their server. Make the following choices:
+# OS system = Ubuntu
+# Region = Dallas TX
+# Plan = Nanode 1GB (since it's the cheapest)
+# Label = "flask-server"
+# Root Password = ThisIsATest (as example but make it something strong that you'll remember. You'll need it!)
+# Optional Add-ons = Backups (recommended for production servers, but not needed for now)
+
+# Once you click on "Create" button you will have to wait will the new server gets provisioned and booted up.
+# @ 6:11. Click on the new server and navigate to the Networking tab. Copy the SSH Access command and paste it 
+# into your CLI to login to the server. You'll want to use bash on a windows machine to follow along easier. The
+# SSH access will look similar to...ssh root@45.33.123.214. (The address shown is example; your ip address will 
+# be different!)
+
+
+# SIDE NOTE: If you're using Ubuntu 18.04, it does not come enabled with SSH. 
+# First, check if an SSH server has already been installed. ->
+# # ~$ ssh localhost
+# If you see the message "ssh: connect to host localhost port 22: Connection refused", you will have to go 
+# through the SSH installation process. Begin by updating the package repository cache. ->
+# # ~$ sudo apt-get update
+# Next, install the OpenSSH software package ->
+# # ~$ sudo apt-get install openssh-server
+# I specifically had to do ->
+# # ~$ sudo apt-get install ssh
+# Verify the installation was successful and SSH is running ->
+# # ~$ sudo service ssh status
+# You may have to start the service with ->
+# # ~$ sudo service ssh start
+
+
+# @ 7:44. When you enter the SSH Access command it will ask you if you are sure you want to continue. Type "yes" 
+# and hit enter. Use two different CLI window sessions to help work on this so you don't have to be switching 
+# back & forth.
+
+# @ 9:10. Once logged in, you'll have a barebones Ubuntu web server that needs to be setup. First, update the 
+# software. This will take a while and ask several times for your input of 'y' to continue. ->
+# # ~$ apt update && apt upgrade
+
+# @ 9:49. Now you want to set a hostname on the machine. ->
+# # ~$ hostnamectl set-hostname flask-server
+# Check that the hostname is set. It should show flask-server. ->
+# # ~$ hostname 
+# # flask-server
+
+# @ 10:12. Now you need to set the hostname in the hosts file. ->
+# # ~$ nano /etc/hosts
+# You'll paste the hostname of the new Ubuntu server SSH Access below the 127.0.0.1 address of the local 
+# computer. (The ip address shown below is example; your address will be different!) ->
+# 45.33.123.214 flask-server
+
+# @ 11:16. Now you'll add a limited user to the machine. You are currently logged in as the root user, and this
+# user has unlimited privileges and can execute any command. It's best to add a limited user because it's safer 
+# than running everything as the root user. Add the user with the following command using your own 
+# 'remote_username'. Code Snippet. ->
+# # ~$ adduser remote_username
+# It will prompt you to enter a password twice and then to enter some basic info about the user. The basic info 
+# is optional so you can choose to hit 'Enter' through it and then confirm with 'y' at the end.
+
+# @ 12:39. Add the new 'remote_user' to the sudo group so they can run admin commands too. ->
+# # ~$ adduser remote_user sudo
+# Logout and then back in as the new 'remote_user' so you won't be logged in as root user longer than needed.->
+# # ~$ exit
+# # logout
+# # Connection to 'server_ip_address' closed.
+
+# @ 13:18. Log back in as the new 'remote_user' using the ssh access command. Fill in the 'remote_user' and 
+# 'server_ip_address' that corresponds to your actual info. ->
+# # ~$ ssh remote_user@server_ip_address
+# Enter your password when prompted.
+
+# @ 14:32. Set up SSH key-based authentication so that you can log in to the server without a password. This is
+# more secure and more convenient because it uses keys that can't be brute forced. It also allows log in without
+# putting in a password every time, which is great for running remote scripts that connect to a web server. 
+# NOTE: real-world application deployment involves setting up SSH keys and firewalls for proper precautions.
+
+# @ 15:17. There's an easier way to copy keys with a command called "ssh-copy-id\
+# remote_username@server_ip_address" 
+# but this utility is not on all OS systems. SIDE NOTE: If the utility does not exist you can do a long command 
+# to achieve what you need. ->
+# # ~$ cat ~/.ssh/id_rsa.pub | ssh remote_username@server_ip_address "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat
+# # \>>~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+
+# @ 15:27. The following is the long way to do the above command. On your web server, create a directory in the
+# home directory called ".ssh". 
+
+# Now go to your local machine terminal and generate a pair of authentication keys with the following command ->
+# # ~$ ssh-keygen -b 4096
+# Enter a passphrase when prompted if you want to be more secure, but otherwise you can leave it empty. NOTE: if
+# you create a passphrase at this point, you will be prompted to use it each time you try to log in to the web 
+# server!
+
+# @ 7:19. Notice that two new files have been made with a private and public key (id_rsa). The public key needs
+# to be moved to the web server. This is done with the SCP (Secure Copy) command + the file path of id_rsa.pub +
+# the ip_server_address. ->
+# # ~$ scp ~/.ssh/id_rsa.pub remote_user@server_ip_address
+
+# IF you want to copy to an exact location on the web server, then you put a colon after the address and specify 
+# the directory. In this case it will be copied into a file called "authorized_keys" that will be auto created.
+# Code Snippet. ->
+# # ~$ scp ~/.ssh/id_rsa.pub remote_user@server_ip_address:~/.ssh/authorized_keys
+# Enter the web server password when prompted
+
+# @ 19:09. Switch to the web server terminal and navigate to the new ".ssh/authorized_keys" folder. You 
+# should see the id_rsa.pub file there now.
+
+# @ 19:43. Set some permissions for the .ssh directory to where the owner of the directory has RWX permissions 
+# on the directory itself and the owner of the files in the directory will have RW permissions on the files. For
+# the permissions on the directory, use the command ->
+# # ~$ sudo chmod 700 ~/.ssh/
+# Enter the password for this user when prompted. Now do a 600 command for all the files in the directory ->
+# # ~$ sudo chmod 600 ~/.ssh/*
+
+# @ 20:41. What the numbers in the 700 command mean are:
+# 1st digit = 7 = Read/Write/Execute for the owner
+# 2nd digit = 0 = No permissions for the group
+# 3rd digit = 0 = No permissions for everyone else.
+
+# What the numbers in the 600 command mean are:
+# 1st digit = 6 = Read/Write for the owner
+# 2nd digit = 0 = No permissions for the group
+# 3rd digit = 0 = No permissions for everyone else.
+
+# @ 21:15. To log out of the web server you type "exit" in the terminal. ->
+# # ~$ exit
+# Now to log back in, you run the same SSH Access command but this time there should be no prompt for a 
+# passphrase ->
+# # ~$ ssh remote_user@server_ip_address
+
+
+####### NOTE: If you had set up a passphrase during the generation of your local machine authentication keys, you will
+# still be prompted for that passphrase regardless of the previous steps. If you want to remove the passphrase 
+# to not have to use it every time, use the following command that will decrypt the private key file and write it
+# to a new temp file that will then need to be used to overwrite the original encrypted private key file. The 
+# format of code is: "openssl rsa -in <Encrypted key filename> -out <Unencrypted key filename>". The encrypted 
+# filename here is 'id_rsa'. So the command you use is ->
+# # ~$ openssl rsa -in id_rsa -out id_rsa_un
+# Open the 'id_rsa_un' file to verify it's been decrypted. Encrypted file headers have: 'Proc-Type:4,ENCRYPTED'. 
+# Whereas unencrypted do NOT have that header.
+# Now overwrite the original encrypted file and delete the temp unencrypted file ->
+# # ~$ mv id_rsa_un id_rsa
+
+# To encrypt the key again, use the same command & process but must specify an encryption algorithm for openssl
+# to use and update file permissions. You can use aes128, aes192, aes256, camellia128, camellia192, camellia256, 
+# des (avoid this one), des3 or idea. This example uses des3 ->
+# # ~$ openssl rsa -des3 -in id_rsa -out id_rsa_en 
+# Now overwrite the original unencrypted file and delete the temporarily made encrypted file ->
+# # ~$ mv id_rsa_en id_rsa
+# Update the file permissions ->
+# # ~$ chmod 600 id_rsa
+######################
+
+# @ 22:00. You need to disallow root logins over SSH while logged in as the user and not require password 
+# authentication by updating the ssh_config file ->
+# # ~$ sudo nano /etc/ssh/sshd_config
+# You may be prompted for the web server user passphrase (this is not the same as your local machine ssh login!)
+# Scroll thru the file and find "PermitRootLogin yes". Change it to "PermitRootLogin no". This user is now a 
+# limited user that has sudo access, so there's no need to log in to the machine as root anymore.
+# Continue scrolling and find a commented out line for "PasswordAuthentication yes". Uncomment it and change to 
+# "PasswordAuthentication no". The reason for this is, now that the SSH keys are working, sometimes hackers try 
+# to brute force a password and they can't get to one if we're not using one to log in and the SSH keys exist. 
+# Save by typing in... ->
+# # Ctrl + x
+# # 'Y'
+# # 'Enter'
+# Restart the SSH service ->
+# # ~$ sudo systemctl restart sshd
+
+# @ 24:00. Setup an "uncomplicated firewall" ->
+# # ~$ sudo apt install ufw
+# Setup rules for the firewall ->
+# # ~$ sudo ufw default allow outgoing
+# # ~$ sudo ufw default deny incoming
+# Now you want to configure allow rules for certain ports (22=SSH, HTTP, 5000) because if you leave the default
+# that was just done, it can lock you out of your server unless you use explicit allow rules to access from the 
+# outside of the server. Remember port 5000 is the port that flask development server runs on. ->
+# # ~$ sudo ufw allow ssh
+# # ~$ sudo ufw allow 5000
+# Before going live, you want to test things. Don't allow port 80 or HTTP yet. Just enable the rules made above.
+# Confirm 'y' when prompted. ->
+# # ~$ sudo ufw enable
+
+# @ 26:34. To see the status of things allow & deny ->
+# # ~$ sudo ufw status
+
+****************
+Usage: ufw COMMAND
+
+Commands:
+ enable                          enables the firewall
+ disable                         disables the firewall
+ default ARG                     set default policy
+ logging LEVEL                   set logging to LEVEL
+ allow ARGS                      add allow rule
+ deny ARGS                       add deny rule
+ reject ARGS                     add reject rule
+ limit ARGS                      add limit rule
+ delete RULE|NUM                 delete RULE
+ insert NUM RULE                 insert RULE at NUM
+ route RULE                      add route RULE
+ route delete RULE|NUM           delete route RULE
+ route insert NUM RULE           insert route RULE at NUM
+ reload                          reload firewall
+ reset                           reset firewall
+ status                          show firewall status
+ status numbered                 show firewall status as numbered list of RULES
+ status verbose                  show verbose firewall status
+ show ARG                        show firewall report
+ version                         display version information
+
+Application profile commands:
+ app list                        list application profiles
+ app info PROFILE                show information on PROFILE
+ app update PROFILE              update PROFILE
+ app default ARG                 set default application policy
+
+************************
+
+
+# @ 26:48. Ready to deploy the flask application. First you need to get it on the web server. If it is in a git 
+# repo, then you can clone it here into the server. If you're using an FTP, like Filezilla, then you can copy it
+# over too. Since you're currently in a bash terminal, lets use that. Switch terminals to your local machine 
+# now.
+
+# @ 27:18. Before pushing the flask application to the server, and since your're using a virtual environment, 
+# you'll want to create a requirements.txt file that captures all the dependencies needed to be installed for 
+# the flask project to work. You should have used a virtual environment for the whole project; otherwise you'd 
+# have to pip install everything that you used onto the server manually. 
+
+# @ 28:00. Now activate the virtual environment for the flask app if it is not active already and navigate to 
+# the flask app folder. Run pip freeze to see the list of installed dependencies and the exact versions for the
+# packages. Code Snippet ->
+# # ~$ pip freeze 
+# To save all these requirements into a file called "requirements.txt" ->
+# # ~$ pip freeze > requirements.txt
+
+# @ 29:28. It's time to put the flask app on the web server using the SCP utility. To copy the entire directory
+# you use -r which means recursively. You're copying from where your app folder is saved on your local machine 
+# to your web server using your limited username and ip address with exact file location in that users home 
+# folder. ->
+# # ~$ scp -r Flask_Blog remote_user@server_ip_address:~/
+
+# @ 31:12. Re-create the virtual environment on the remote_server to run the flask app in. You need to install
+# some things first, like python3-pip ->
+# # ~$ sudo apt install python3-pip
+# You will be asked for the remote-server passphrase.
+
+# @ 31:58. Now install python3 virtual environment library ->
+# # ~$ sudo apt install python3-venv
+
+# @ 32:18. Create a new virtual environment inside the flask project directory by specifying the Flask_Blog 
+# directory and name the environment "venv". ->
+# # ~$ python3 -m venv Flask_Blog/venv
+# If you navigate into the Flask_blog folder you will see a new directory called "venv". To activate venv ->
+# # ~$ source venv/bin/activate
+# You will see "(venv)" appear before your terminal server name and file path listing.
+
+# SIDE NOTE: If you are using conda you would go about this a different way since you can export your 
+# environment with all the requirements in a file and then import all to re-create it elsewhere. To do this, 
+# first install miniconda on the remote_server and source the .bashrc file to activate the installation. ->
+# # ~$ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# # ~$ bash Miniconda3-latest-Linux-x86_64.sh
+# # ~$ source ~/.bashrc
+# You should see "(base)" appear before the terminal ~$ now.
+# Do not allow (base) environment to automatically activate for every instance of a terminal. Code Snippet. ->
+# # ~$ conda config --set auto_activate_base false
+# # ~$ source ~/.bashrc
+# You will see the "(base)" disappear.
+# Now import your exported "environment.yaml" file from within the Flask_Blog directory and call the new
+# environment "flaskblog_env" just like it is on your local machine.
+# # ~$ ~$ conda env create -f environment.yaml flaskblog_env
+# Now activate the new environment. Code Snippet. ->
+# # ~$ conda activate flaskblog_env
+# The environment along with all the requirements needed for the flask application are now installed and ready
+# to be launched.
+
+# @ 33:29. With the venv environment activated, you can now install all of the requirements needed for the flask
+# application to run. (only if you did not do the setup in the SIDE NOTE above). Make sure you are navigated 
+# inside the Flask_Blog directory, then use the following command. Code Snippet. ->
+# # ~$ pip install -r requirements.txt
+
+# @ 34:04. The objective here is to test the website using the development server to make sure it works before 
+# installing nginx and gUnicorn. There are a few variables that need to be set first for the secret key, 
+# database URL, email user, and email password for password resets. These need to be set in order for the app
+# to work properly. The local machine used environment variables, but you shouldn't do the same here because it
+# can get tricky when working with different web servers. Instead, create a configuration file that holds all
+# this sensitive information and load that into the application. Start by switching to your local machine CLI.
+
+# @ 35:08. Activate your flask app environment. Grab the variables by using python. You can see which variables
+# are needed by looking in the flask configuration file. Code Snippet. ->
+# # ~$ python
+# # >>> import os
+# # >>> os.environ.get('SECRET_KEY')
+# # 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+# # >>> os.environ.get('SQLALCHEMY_DATABASE_URI')
+# # 'sqlite:///site.db'
+# # >>> os.environ.get('EMAIL_USER')
+# # 'user@address.com'
+# # >>> os.environ.get('EMAIL_PASS')
+# # 'password'
+# # >>>
+
+# @ 36:53. Now switch to the remote_server CLI and create a file called "flaskblog_config.json. It is named with 
+# respect to the app it applies to so it can be differentiated from other possible config files for apps. But if
+# it will be the only config file that lives on this server then it's ok to just call it config.json. If you're 
+# more comfortable using yaml or the like, feel free to make it that type of file. Code Snippet. ->
+# # ~$ sudo touch /etc/flaskblog_config.json
+# Now edit that new file ->
+# # ~$ sudo nano /etc/flaskblog_config.json
+# Put the sensitive data in {} with comma separation for correct json syntax.->
+# # {
+# #     "SECRET_KEY": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+# #     "SQLALCHEMY_DATABASE_URI": "sqlite:///site.db",
+# #     "EMAIL_USER": "youremail",
+# #     "EMAIL_PASS": "yourpassword"
+# # }
+
+# @ 39:57. Now that the config file has been setup and saved you need to edit the config.py file in the flask
+# app to set those values. Remember you're still on the remote_server doing this alteration. Code Snippet. ->
+# # ~$ sudo nano config.py
+# Import json and load in the values. Note that when you use json.load on a json file, in python, it makes the 
+# config variable a python dictionary which will be equal to all of the key value pairs form the json config 
+# file. Code Snippet. ->
+# # import json
+# # 
+# # with open('/etc/flaskblog_config.json') as config_file:
+# #     config = json.load(config_file)
+
+# @ 41:34. Once config is specified you will replace all the "os.environ.get" references to "config.get". ->
+# # class Config:
+# #       SECRET_KEY = config.get("SECRET_KEY")
+# #       SQLALCHEMY_DATABASE_URI = config.get("SQLALCHEMY_DATABASE_URI")
+# #       MAIL_USERNAME = config.get("EMAIL_USER")
+# #       MAIL_PASSWORD = config.get("EMAIL_PASS")
+# Save and exit the file.
+
+# @ 42:25. Testing the app; there are several ways. When we tested on the local machine we used "python run.py".
+# But if you "cat run.py" now, you will see that the command will do an "app.run(debug=True)". In this case we 
+# want to set the host equal to 0.0.0.0 to expose the app to the outside world. Therefore, this time we will use
+# "flask run" with an export of the flask project using a temporary environment variable. Code Snippet. ->
+# # ~$ export FLASK_APP=run.py
+# # ~$ flask run --host=0.0.0.0
+# Now on your local machine go to your remote_server ip address at port 5000. Remember if you don't specify the
+# exact port with the ip address then you won't see a page because port 80 is still blocked on the firewall. ->
+# # server_ip_address:5000
+
+# @ 44:48. Test the application by logging in and out with an existing user and then register a new user with
+# credentials: "DeployedUser, DeployedUser@test.com, testing3". If it's successful then log in with this user 
+# and create a new post. Try to update the same post and then delete the post. Then change the profile pic. 
+# Logout and try to request password reset. (REMEMBER: in the flaskblog/users/utils.py file that the Password
+# Reset Request sender=yourAcutalEmail) You should recieve and email with the reset link and be able to change
+# the password to "testing4".
+
+# @ 47:13. Everything is working fine, but you must realize that thus far it's all running on a development 
+# server (from python) on the live production server (remote_server). This is NOT what you want to do if you go 
+# live. You don't want to send the http://0.0.0.0:5000 URL out using a development server. This server isn't
+# made for high performance and to handle a lot of internet traffic. To do this, you use nginx and gUnicorn
+# since that's what they're made for. So kill this server and proceed to install these items.
+
+# @ 48:16. CD one folder level up into the home directory and install the following packages. (If you're using
+# conda, then specify conda) ->
+# # ~$ sudo apt install nginx
+# # ~$ pip install gunicorn
+# Change a few configurations to use these packages. Nginx is going to be the web server that will handle 
+# requests in static files (CSS, JS, pictures); it's not handling python code. Python code is handled by 
+# gunicorn. To do this, you need to delete the default nginx configuration file and create a new file. ->
+# # ~$ sudo rm /etc/nginx/sites-enabled/default
+# # ~$ sudo nano /etc/nginx/sites-enabled/flaskblog
+# Put the following code into the new file that will specify port=80, server_name=server_ip_address,
+# forward all static files by specifying their location in the static folder, forward all other traffic to 
+# gunicorn (by default gunicorn runs on port 8000), pass all other extra variables for the proxy to gunicorn
+# too, and turn redirect off. Code Snippet. ->
+# # server {
+# #         listen 80;
+# #         server_name server_ip_address;
+# # 
+# #         location /static {
+# #                 alias /home/username/Flask_Blog/flaskblog/static;
+# #         }
+# # 
+# #         location / {
+# #                 proxy_pass http://localhost:8000;
+# #                 include /etc/nginx/proxy_params;
+# #                 proxy_redirect off;
+# #         }
+# # }
+
+# @ 54:03. Open up port 80 on the firewall because it is now being used in the configuration file of nginx.
+# Also deny traffic for port 5000 since we are done testing. Finally enable the settings ->
+# # ~$ sudo ufw allow http/tcp
+# # ~$ sudo ufw delete allow 5000
+# # ~$ sudo ufw enable
+
+# @ 54:49. restart nginx server. ->
+# # ~$ sudo systemctl restart nginx
+# Keep in mind that even though nginx is running, gunicorn is not. Verify this by opening an incognito browser
+# and navigating to the server_name you have. You'll see an nginx error. But, you can still access static files
+# if you manually navigate to them; input /static/main.css at the end of the server_name and you will see css.
+
+# @ 56:35. Change directories into the flask app. You will need to run "workers" for gunicorn. To determine how 
+# many, the documentation for gunicorn says it should be (2 x num_cores) + 1. To see the number of cores on
+# your machine for linux use the command ->
+# # ~$ nproc --all
+# In this case you will see 1. When applying that to the formula you get a number of 3.
+
+# @ 58:13 Run gunicorn, the number of workers just determined, and specify the file that has the app (run.py) 
+# with the following command ->
+# # ~$ gunicorn -w 3 run:app
+# You can run the same tests for functionality that were run before.
+
+# @ 59:30. Things work, but you are manually running your server. You need something to auto-start and restart
+# the server. Use software called supervisor to automate this function. ->
+# # ~$ sudo apt install supervisor
+
+# @ 1:00:05 Now setup a configuration file for supervisor. ->
+# # ~$ sudo nano /etc/supervisor/conf.d/flaskblog.conf
+# In the newly created file you will write the code to: give the program a name, the directory where the command
+# will run from, the command to run using the full path to gunicorn (since you won't have the virtual 
+# environment it's in activated yourself at the time), username, autostart, autorestart, stopasgroup, 
+# killasgroup (to wrap up child processes), an error log, and an out log. Code Snippet. ->
+# # [program:flaskblog]
+# # directory=/home/username/Flask_Blog
+# # command=/home/username/miniconda3/envs/flaskblog_env/bin/gunicorn -w 3 run:app
+# # user=username
+# # autostart=true
+# # autorestart=true
+# # stopasgroup=true
+# # killasgroup=true
+# # stderr_logfile=/var/log/flaskblog/flaskblog.err.log
+# # stdout_logfile=/var/log/flaskblog/flaskblog.out.log
+
+# @ 1:04:00. Create the directory that will hold the log files using -p to create any directory in the chain if 
+# none exist. ->
+# # ~$ sudo mkdir -p /var/log/flaskblog
+# Create the log files specified earlier in the flaskblog.conf file ->
+# # ~$ sudo touch /var/log/flaskblog/flaskblog.err.log
+# # ~$ sudo touch /var/log/flaskblog/flaskblog.out.log
+
+# @ 1:05:00. Restart the server to apply changes.
+# # ~$ sudo supervisorctl reload
+
+# @ 1:06:30. Some functionality is changed by the nginx server. If you try to upload a large photo you will get
+# an error. Nginx limits uploads to 2MB. If you want to change this limit you can by altering the nginx
+# configuration file. ->
+# # ~$ sudo nano /etc/nginx/nginix.conf
+# Scroll down to http section and add the line of code after types_hash_max_size to a size you want. Here it's
+# 5 megabytes. Restart the nginx server. ->
+# # client_max_body_size 5M;
+# # ~$ sudo systemctl restart nginx
+# If you go back to the browser and test by trying to upload a large file again, it will work. Remember that the
+# large file size won't matter since the app will re-size it smaller no matter what.
+
+# @ 1:09:00. Test that the password reset is still working just in case. You can reset the password from
+# testing4 to testing3 on the DeployedUser account.
+
+# @ 1:11:34. If you wanted to delete this server. Log in to your Linode account, find your server name, click
+# the three dots displaying next to it, click on settings, towards the bottom of the page you will see Delete
+# Linode. You can also just "Power Off" the server on linode to shut down the site until you need it.

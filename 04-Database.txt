@@ -1,0 +1,101 @@
+###### Flask Series NOTES ############
+
+# Part 4 - Database with Flask-SQLAlchemy ->
+# SQL Alchemy is a popular ORM (Object Relational Mapper) that people use for different databases. It allows
+# you to access databases in an easy to use object-oriented way so that you don't have to change your code to
+# query a different database; you just use a different database URL to connect with SQL ALchemy.
+# This tutorial will use a SQLite DB for development and then switch to a Postgres DB for production.
+# There is a regular sql alchemy package, but flask sql alchemy is a flask specific extension that provides 
+# useful defaults and helpers for a flask application.
+# Install flask-sqlalchemy->
+# # ~$ pip install flask-sqlalchemy
+
+# Import the module in flaskblog.py file -> from flask_sqlalchemy import SQLAlchemy
+# Specify the database location in flaskblog.py file as a configuration. This location will simply be a SQL Lite 
+# database on your file system -> app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+# After the location is set, create a database instance -> db = SQLAlchemy(app)
+# SQL Alchemy lets you represent your database structure as classes which are also called models.
+# Sepcify a double underscore method (a.k.a. dunder or magic method) to work with how the object will be printed->
+# # def __repr__(self):
+# # 	return f"User('{self.username}', '{self.email}', '{self.image_file}')"
+
+# The "post" model and the "user" model are going to have a one-to-many relationship to eachother since users
+# will author a post; therefore, one user can have multiple posts but a post can only have one author.
+# To account for this, at the end of the "users" model, create a post attribute to be equal to the following-->
+# # posts = db.relationship('Post', backref='author', lazy=True)
+# backref is similar to adding another column to the post model and serves as an easy way to get the author info
+# later. Lazy=True makes SQL alchemy load the data as necessary in one go.
+
+# Create your SQL lite Database in your command terminal ->
+# # ~$ python
+# # >>> from flaskblog import db
+# # >>> db.create_all()
+# This should create a database file called "site.db" within your project directory.
+# Now you want to import your models into the database ->
+# # >>> from flaskblog import User, Post
+# Creat an instance of a user and pass in all of the attributes that it needs. ->
+# # >>> user_1 = User(username='Corey', email='C@demo.com', password='password')
+# Then add the user to the db ->
+# # >>> db.session.add(user_1)
+# The changes have not been commited yet and are not in the database. Lets commit the changes to the database ->
+# # >>> db.session.commit()
+
+# SQL ALchemy makes it easy to query databases. If you want to query all the users ->
+# # >>> User.query.all
+# If you just want to get the first user, then you can access it from the list that was just returned, OR you can 
+# use the "first" method that gives the very first result ->
+# # >>> User.query.first()
+# You can also filter the results. Let's say you want to filter by username for a list of all names of Corey ->
+# # >>> User.query.filter_by(username='Corey').all()
+# You can also filter by the first username without it being in a list ->
+# # >>> User.query.filter_by(username='Corey').first()
+# To use this query and capture it in a new variable and then display what the variable captured ->
+# # >>> user = User.query.filter_by(username='Corey').first()
+# # >>> user
+
+# To access additional attributes ->
+# # >>> user.id
+# The above would return an auto generated id of 1
+
+# You can also query by user ID. To fetch a user with a specific ID of 1 ->
+# # >>> user = User.query.get(1)
+
+# To see the user by posts ->
+# # >>> user.posts
+
+# To create some posts by user, you have to provide all post attributes ->
+# # >>> post_1 = Post(title = 'Blog 1', content='First Post Content!', user_id=user.id)
+# # >>> post_2 = Post(title = 'Blog 2', content='Second Post Content!', user_id=user.id)
+# Be aware a date was not provided because the model is set to default with current UTC to populate a date/time.
+# You can provide a date if you want.
+# If you've provided the above info, remember you still need to add & commit the changes to the DB ->
+# # >>> db.session.add(post_1)
+# # >>> db.session.add(post_2)
+# # >>> db.session.commit()
+# To view the changes in the form of a list ->
+# # >>> user.posts
+# Since the info is a list of data, you can loop through posts like usual to print out ->
+# # >>> for post in user.posts:
+# # ...   print(post.title)
+# # ...
+# # Blog 1
+# # Blog 2
+# # >>> 
+
+# Now get the first of the posts by querying the post table directly ->
+# # >>> post = Post.query.first()
+# # >>> post
+# If you want the ID of the user that created the post ->
+# # >>> post.user_id
+# If you want more information from the user that created the post, use the backref relationship that was created
+# in the previous post model ->
+# # >>> post.author
+
+# To delete all your data to start clean again ->
+# # >>> db.drop_all()
+# To create the tables & database structure fresh again ->
+# # >>> db.create_all()
+# To query the database for all users just to see that it's clean ->
+# # >>> User.query._all()
+# # >>> Post.query._all()
+# You should see blank [] after each query entry

@@ -1,0 +1,144 @@
+########
+# Part 11 - Blueprints and Configuration ->
+# Restructuring the application files and learn how to use flash blueprints. Configuration variables will be 
+# moved into their own file. Creation of the application will be it's own function; this allows for different 
+# instances of the application which lets you have one application for testing and one for production (called an
+# Application Factory).
+# @ 1:30. To create a blueprint you begin by creating a new package in the application that is named after the
+# functionality that it will contain. For instance, to make a blueprint for users and author an authentication 
+# functionality, make a directory called "users" in the flaskblog directory. At this point, also make a 
+# directory for "posts" and one for miscellaneous items called "main". In order to tell python that these new 
+# directories are packages, each directory needs to have a "__init__.py file, even if the file is blank with no 
+# code in it. 
+
+# @ 3:31. Each directory will also need it's own routes.py file too; this file will only contain the routes that 
+# pertain to that functionality.
+
+# @ 4:08. The "users" & "posts" directories will need their own forms.py file. There are some functions within 
+# the "flaskblog/routes.py" directory that should be split out as well. They will go in the "users/utils.py" 
+# file. Now open the "users/routes.py" file and import the blueprint class from flask, then create an instance 
+# (similar to creating a flask instance). You will no longer be using the global app variable to create the 
+# routes. Instead, routes will be created specifically for this users blueprint and then register these with the
+# application at a later time. Code Snippet. ->
+# # from flask import Blueprint
+# # 
+# # users = Blueprint("users", __name__)
+
+# @ 6:14. Refer to "flaskblog/routes.py" and cut out all that has to do with users (the register, login, logout,
+# account, user_posts, reset_password, and reset_password/<token> routes). Paste these into the new 
+# "users/routes.py" file. 
+
+# Back in "flaskblog/routes.py", cut the functions to save_picture and send_reset_email to paste them into the 
+# "users/util.py" file.
+
+# @ 8:18. In the "users/routes.py" file, change all instances of "@app.route" to "@users.route" to stop using 
+# the global app variable to create the routes.
+
+# @ 9:02. The same process that was done for the "users" directory will now be done for the "posts" directory. 
+# Copy/Paste the 1st two lines of code from the "users/routes.py" file into the "posts/routes.py" file and 
+# change the 2nd line accordingly for blueprint posts. Go back into"flaskblog/routes.py" and cut out all the 
+# routes that pertain to posts. Then change all instances of "@app.route" to "@posts.route" to stop using the 
+# global app variable to create the routes. Repeat this same process for the "main/route.py" file where you will
+# be putting the home and about routes.
+
+# @ 11:39. Split up the "flaskblog/forms.py" file starting with putting everything pertaining to users & 
+# authentication into the "users/forms.py" file (the Registration, Login, UpdateAccount, RequestReset, 
+# ResetPassword). The PostForm will be the only form in the "posts/forms.py" file.
+
+# @ 12:56. Fix the imports at the top of the files. Use the provided code snippets at the following link or use 
+# your code editor feature to tell you what is missing. Link -> 
+# https://github.com/CoreyMSchafer/code_snippets/blob/master/Python/Flask_Blog/snippets/blueprint_imports.txt
+
+# @ 15:43. Note that when you change around files, you have to be careful about bringing your imports in. As 
+# example, look at "users/routes.py" file and notice that "from flaskblog.forms import" is now "from 
+# flaskblog.users.forms import".
+
+# @ 16:35. Delete the old "routes.py" and "forms.py" in the main flaskblog directory. Then open the applications
+# __init__.py file and alter the last line of code that imports the routes to instead import the blueprint 
+# objects from each of the packages and register them with the route. Code Snippet. ->
+# # from flaskblog.user.routes import users
+# # from flaskblog.posts.routes import posts
+# # from flaskblog.main.routes import main
+# # 
+# # app.register_blueprint(users)
+# # app.register_blueprint(posts)
+# # app.register_blueprint(main)
+
+# @ 19:07. Now you need to change all the url_for functions that link to all the routes, to be the URL for the 
+# relative blueprints. It now needs to be the blueprint name followed by the function name. Code Snippet.->
+# # url_for("main.home")
+# This needs to be changed for all url_for functions that redirect to a route from the users, posts, or main 
+# packages.
+
+# @ 22:33. Another change that is not obvious is the login_view in the __init__.py file it needs to have the
+# Blueprint specified before login. ->
+# # login_manager.login_view = "users.login"
+# This should be the last of the changes for now. Test in your browser. All should route accordingly.
+
+# @ 24:40. Make the application easier to test by putting the configuration values of the application into their 
+# own file and move the creation of the application into a function. This enables you to create instances of the
+# app with different configurations.
+
+# @ 25:00. Move all the app.config code lines from the "flaskblog/__init__.py" file into their own file called
+# config.py that will be located in the flaskblog directory. They will be put inside a class Config: and make 
+# them constant variables with the same names as the keys; so remove the app.config[] specs from the lines and 
+# the "" from the new variables.
+
+# @ 26:50. As best practice, it's best to keep secret information out of the source code; such as the SECRET_KEY
+# and SQLALCHEMY_DATABASE_URI. Convert those to environment variables. Code Snippet. ->
+# # import os
+# # 
+# # class Config:
+# #       SECRET_KEY = os.environ.get("SECRET_KEY")
+# #       SQLALCHEMY_DATABASE_URI = os.environ.get("SQLALCHEMY_DATABASE_URI")
+# #       MAIL_SERVER = "smtp.googlemail.com"
+# #       MAIL_PORT = 587
+# #       MAIL_USE_TLS = True
+# #       MAIL_USERNAME = os.environ.get("EMAIL_USER")
+# #       MAIL_PASSWORD = os.environ.get("EMAIL_PASS")
+
+# @ 29:45. In the "flaskblog/__init__.py" file, you need to tell the app to use the values set in the config.py
+# file by using the app.config.from_object() method. First import it at the top of the file and then include the
+# app variable right below the creation of the flask instance. Make sure to delete th os import since it's not 
+# used now.
+
+# Test in browser.
+# @ 31:25. Move the creation of the app into a function to make it easier to run multiple instances of the app 
+# for testing and configuration. In the __init__.py file, create a function called "create_app()" that will take 
+# an argument for the configuration object you want used for the application; this will be set to the config 
+# class. Next, move the code lines that create the app into the function while leaving the extensions being used
+# to stay outside the function. Although, you'll still want to initialize the extensions inside of the function.
+# The reason for this is explained in the Flask docs. It basically says this is so the extension object does not
+# initially get bound to the application therefore allowing a single extension object to be used for multiple 
+# apps. Code Snippet. ->
+# # def create_app(config_class=Config):
+# #     app = Flask(__name__)
+# #     app.config.from_object(Config)
+# # 
+# #     from flaskblog.users.routes import users
+# #     from flaskblog.posts.routes import posts
+# #     from flaskblog.main.routes import main
+# #     app.register_blueprint(users)
+# #     app.register_blueprint(posts)
+# #     app.register_blueprint(main)
+
+# @ 33:27. You initialize the extensions at the top of the file without the app variable; so delete "app" from 
+# each. Then use the init_app() method to pass the application to all of the extensions by copying the four 
+# extension names into the function and passing in "app". Code Snippet. ->
+# #     db.init_app(app)
+# #     bcrypt.init_app(app)
+# #     login_manager.init_app(app)
+# #     mail.init_app(app)
+
+# @ 34:10. At the bottom of the function, return the app.
+
+# @ 34:20. Doing all this has now created the issue that there is no longer an app variable that can be imported
+# from the flaskblog package. The fix is to find/replace all instances of the app variable throughout the 
+# package with an import called "current_app".
+
+# @ 37:28. Look at run.py file and import the create_app function rather than just app. Then you'll want to add 
+# code to actually create the app. Code Snippet. ->
+# # app = create_app()
+# The code could have passed in a configuration as an argument, but remember it's using the config class that 
+# was created earlier as it's default. So this is why you don't have to pass anything in.
+# Test in browser. All should still work fine.

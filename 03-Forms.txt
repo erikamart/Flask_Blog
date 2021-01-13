@@ -1,0 +1,17 @@
+###### Flask Series NOTES ############
+
+# Part 3 - Forms and User Input ->
+# Install flask-wtf
+# # ~$ pip install flask-wtf
+
+# In forms.py, you are specifying forms to be used but you want to protect the application with a secret key. 
+# A secret key will protect against modifying cookies, cross-site requests, forgery attacks, etc. To set this,
+# open the routes.py file and right below the "from" imports add the line-> app.config['SECRET_KEY'] = ''
+# To generate a good random set of characters, startup your python interpreter and use the built-in secrets module.
+# # ~$ import secrets
+# To get a big random set of characters, use the token hex method and pass in a 16 byte amount->
+# # ~$ secrets.token_hex(16)
+# Copy the character set and use it. (Note: in a later video this will be moved to an environment variable and put
+# in the __init__.py file)
+
+# Created the files login.html and register.html

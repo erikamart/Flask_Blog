@@ -1,0 +1,26 @@
+###### Flask Series NOTES ############
+
+# Part 5 - Package Structure ->
+# The purpose of this video is to restructure the app to run as a package rather than as a module.
+# Miguel Greenburg gave a talk at pyCon in 2016 called "Flask at Scale" that explains the reason for packaging.
+# Video time @ 9:00 is where a new folder called "flaskblog" is created and all the prj files are moved to it with exception of the original file called flaskblog.py (left outside the folder). 
+# Then __init__.py is created @ 10:00. The and routes.py file is made @ 11:30. 
+# @ 12:25 flaskblog.py is renamed to run.py. All the new files have had changes to import calls.
+
+# @ 17:35 the new app is run ->
+# # ~$ python run.py
+# Follow the link to view in your browser
+# Test the login page with user = admin@blog.com and password = password.
+
+# Now, stop the app, activate python in command terminal, and re-create your database ->
+# # ~$ CTRL^C
+# # ~$ python
+# # >>> from flaskblog import db
+# # >>> from flaskblog.models import User, Post
+# # >>> db.create_all() 
+# Now query the new db. You should see a result of blank []. Exit out of python afterwards.
+# # >>> User.query.all()
+# # >>> exit()
+# Now run the tree command to see the file structure. You should see sit.db added into the flaskblog folder.
+# For now it is ok to have the site.db in this location because it's where our SQLite db is. Later it should
+# be put outside the folder.

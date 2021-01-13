@@ -1,0 +1,82 @@
+########
+# Part 15 - How to enable HTTPS with a free SSL/TLS certificate using Let's Encrypt ->
+# Secure your domain name with an SSL certificate. The icon of a lock on the browser window verifies if secured.
+# @ 1:28. Go to the following website and click on "Get Started" -> https://letsencrypt.org/
+# Look at the section for "With Shell Access" and click on the link for "Certbot" ACME client. On the certbot
+# page, look for the area titled "My HTTP website is running:" and choose the web server and operating system 
+# that you're using (for this flask series this would be Nginx and Ubuntu 18.10). 
+
+# @ 2:07. Instructions will appear at the bottom of the page along with the commands needed to enter into your
+# CLI. It's recommended to read through the documentation before continuing. Now SSH into your remote_server.
+# To get a copy of the same commands used on the example video, go to this link. -> http://bit.ly/nginx-certbot
+
+# @ 2:26. While logged into the remote_server, enter the commands in order as given to add Certbot PPA ->
+# # ~$ sudo apt-get update
+# # ~$ sudo apt-get install software-properties-common
+# # ~$ sudo add-apt-repository universe
+# # ~$ sudo add-apt-repository ppa:certbot/certbot
+# # ~$ sudo apt-get update
+
+# @ 4:23. Install Certbot
+# # ~$ sudo apt-get install certbot python-certbot-nginx
+
+# @ 4:33. Before running the next command, make a change to the nginx configuration file (made and located in
+# /etc/nginx/sites-enabled/flaskblog). Currently the server_name is set as the ip_address; you want to instead 
+# change that to be the new domain name you've set up. Open the nginx configuration in nano. ->
+# # ~$ sudo nano /etc/nginx/sites-enabled/flaskblog
+# Change the server_name to the domain name. Code Snippet. ->
+# # server {
+# #         listen 80;
+# #         server_name www.yourwebsite.com;
+
+# @ 5:50. Now get a certificate and have Certbot edit your Nginx configuration automatically to serve it,
+# turning on HTTPS access in a single step. ->
+# # ~$ sudo certbot --nginx
+# When prompted, enter your email address, agree to terms, choose an option to share your email, and hit enter
+# to activate all names in the list for HTTPS.
+
+# @ 7:10. The CLI prompt will ask if you want to redirect HTTP traffic to HTTPS always or have both available.
+# You want to not have both and always redirect to HTTPS; so choose option 2. You will see congratulations on
+# successful enabling. Notice it reports that it changed the nginx configuration file you altered earlier.
+# Cat into that file to see the changes. ->
+# # ~$ cat /etc/nginx/sites-enabled/flaskblog
+# You'll see code using port 443 ssl and redirects to certbot https. This is good. If there are issues with this
+# automatic certbot command running, you could look into only getting the certificate only install and manually
+# configuring. 
+
+# @ 10:03. If you try to test nginx configuration it might appear to have an issue. For example, if you use the following command it will fail. That's to be expected because it's just a permission issue. ->
+# # ~$ nginx -t
+# If you run the command using sudo then you shouldn't have that problem ->
+# # ~$ sudo nginx -t
+
+# @ 10:53. Allow HTTPS traffic to your website. You can disallow HTTP traffic if you want, but certbot will 
+# automatically redirect traffic to there anyway, so it's not necessary. Once you've made the changes, make
+# sure to restart your server for them to take affect. Alter the firewall settings. ->
+# # ~$ sudo ufw allow https
+# # ~$ sudo systemctl restart nginx
+
+# @ 11:37. Test your website. If you already had it up, reload it and take note of the change in the website
+# that should show a lock icon and https: added to the address. The site is now secure for private info and 
+# credit card numbers. Test the overall site functionality to verify that all pages include the browser lock
+# icon.
+
+# @ 12:53. Certificates last about 90 days and need to be renewed. It's best to set up automatic renewal.
+# The Certbot packages on your system come with a cron job or systemd timer that will renew your certificates 
+# automatically before they expire. You will not need to run Certbot again, unless you change your 
+# configuration. You can test automatic renewal for your certificates by running this command ->
+# # ~$ sudo certbot renew --dry-run
+
+# @ 14:09. If you want to edit the crontab, do that with sudo, so that the commands run are run as root. ->
+# # ~$ sudo crontab -e
+# When prompted select an editor. Lets say you want to renew a certificate at 4:30am on the 1st of every month.
+# The below code will do this. The asterisk for month means every month. Asterisk for day of week means any day
+# no matter which is the 1st. The --quiet is to perform the command in the background.
+# min. hrs  dayOfMonth month dayOfWeek   command            
+# 30    4    1           *    *          sudo cerbot renew --quiet
+# ->
+# # ~$ 30 4 1 * * sudo cerbot renew --quiet
+
+THE END
+
+
+https://certbot.eff.org/lets-encrypt/ubuntufocal-nginx

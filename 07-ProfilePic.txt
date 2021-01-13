@@ -1,0 +1,122 @@
+########
+# Part 7 - User Account and Profile Picture ->
+# Make it so a user can update their account information and add an image to their profile picture.
+# Update the account.html file with the code snippets file from Coreys github. It goes sandwiched in the code 
+# block. This code includes some bootstrap classes to make things look nicer along with css style references. It
+# also has hardcoded code for the user image, username, and email. Change these harcodes to what's needed. ->
+# #                 <h2 class="account-heading">{{ current_user.username }}</h2>
+# #                <p class="text-secondary">{{ current_user.email }}</p>
+# Save Corey's default user pic into a new folder called "profile_pics" that is saved into the "static" folder. 
+# Update the last two lines of code in the routes.py file ->
+# #    image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
+# #    return render_template('account.html', title='Account', image_file=image_file)
+# Update the image src link to reference the routes.py file ->
+# #        <img class="rounded-circle account-img" src="{{ image_file }}">
+# Test the code by going to the account page. You should see the default image with user and email.
+
+# Update forms.py to be able to update account information on the site. It will be similar to the registration  
+# form code, so copy that and paste it at the bottom to alter. Import current_user to the file too. ->
+# # from flask_login import current_user
+# Create conditionals in the code to only do validation checks when the user updates their info. ->
+# # class UpdateAccountForm(FlaskForm):
+# #     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])
+# #     email = StringField('Email', validators=[DataRequired(), Email()])
+# #     submit = SubmitField('Update')
+# # 
+# #     def validate_username(self, username):
+# #         if username.data != current_user.username:
+# #             user = User.query.filter_by(username=username.data).first()        
+# #             if user:
+# #                 raise ValidationError('That username is taken. Please choose a different one.')
+# #     
+# #     def validate_email(self, email):
+# #         if email.data != current_user.email:
+# #             user = User.query.filter_by(email=email.data).first()        
+# #             if user:
+# #                 raise ValidationError('That email is taken. Please choose a different one.')
+# @ 10:00. Now import the new form into routes.py to pass it into the account template. Also create an instance 
+# of the form in the account route decorator section ->
+# # from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountForm
+# #    form = UpdateAccountForm()
+# #    image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
+# #    return render_template('account.html', title='Account', image_file=image_file, form=form)
+# @ 11:00. Next you have to get this to display in a template. Copy some code in the register.html; you're only 
+# copying the div/ that holds the content-section! Paste the code into the account.html file over the comment 
+# that says <-- FORM HERE -->. Alter the code to keep the username and email fields, but get rid of the entire div
+# that surrounds the password related fields.Then change the legend from "Join Today" to "Account Info". 
+# Remove the div tags for "content-section" so that the formatting is not used.
+
+# @ 13:35. Fix project so that updates will be processed and this form auto inputs the existing username & 
+# email. In routes.py file, add allowed messages to post to the form. Copy/Paste the GET POST methods from the 
+# "login" route code into the "account" route code and add the conditionals for if the form is valid when 
+# submitted. You also want to add a flash message if successful and a redirect to the account page to not allow
+# the "post/get redirect pattern" that would possibly notify you that you are about to submit another post 
+# request during page reload.
+# # @app.route("/account", methods=['GET', 'POST'])
+# # @login_required
+# # def account():
+# #     form = UpdateAccountForm()
+# #     if form.validate_on_submit():
+# #         current_user.username = form.username.data
+# #         current_user.email = form.email.data
+# #         db.session.commit()
+# #         flash('Your account has been updated!', 'success')
+# #         return redirect(url_for('account'))
+
+# @ 16:45. Populate the current users name and email. Add elif onto the conditional last made ->
+# #     elif request.method == 'GET':
+# #         form.username.data = current_user.username
+# #         form.email.data = current_user.email
+
+# @ 18:00. Now is a good time to test the site and put in a 2nd user to make sure all the validations are 
+# working. Using credentials of: TestUser, TestUser@demo.com, testing2.
+# After creation, log in with the original user: CoreyMSchafer@gmail.com, testing1. Try to update the account 
+# info using the info of the 2nd user. You should get error flags. 
+# Now try entering TestUser123, TestUser123@demo.com. It should be successful. Now put back CoreyMSchafer, 
+# CoreyMSchafer@gmail.com. It should be successful.
+
+# @ 20:12. Make ability to change the profile picture. Open forms.py and import flask_wtf.file extensions that 
+# will allow the type of field that this is and the validator to allow specific type uploads. ->
+# # from flask_wtf.file import FileField, FileAllowed
+# Scroll down the file and in the "UpdateAccountForm" class, add in between email and submit lines. ->
+# #     picture = FileField('Update Profile Picture', validators=[FileAllowed(['jpg', 'png'])])
+# @ 22:07. Render the field in the acount template. Open account.html and add code above </fieldset>. Note: the
+# error flagging is handled differently here because the other forms are wrapped in an invalid-feedback div, 
+# whereas this form is not in that div. ->
+# #             <div class="form-group">
+# #                 {{ form.picture.label() }}
+# #                 {{ form.picture(class="form-control-file") }}
+# #                 {% if form.picture.errors %}
+# #                     {% for error in form.picture.errors %}
+# #                         <span class="text-danger">{{ error }}</span></br>
+# #                     {% endfor %}
+# #                 {% endif %}
+# #             </div>
+# @ 24:43. Remember to add a special encoding type to the form! It must be done in order for the image data to 
+# pass properly. If this is forgotten it can cause error codes that are not obvious to this problem. Go to line 
+# 11 of the file and include the following as seen ->
+# #     <form method="POST" action="" enctype="multipart/form-data">
+# Test the site account page by trying to upload a non-jpg or png file. It should throw an error flag. Ability 
+# to save an actual approved file type is not done yet. If it looks like the page isn't doing anything, make 
+# sure you correctly put in the enctype!!!! Documentation and error messages aren't helpful to tell you this 
+# issue.
+
+# @ 26:45. Add the logic to the route to be able to save a profile picture if one is uploaded. Since the logic 
+# for the picture is a whole chunk of code, it is best to create a new function for it just above the "/account"
+# route code in the routes.py file. This function uses the secrets module to randomly code the new pic name to
+# prevent similar names from having name conflict during upload. Import the secrets module at the top of the 
+# routes.py file. You will set the function to use 8 bytes of hex characters. 
+# @ 28:55. To make sure the file being uploaded keeps its original extension, import the os module. This 
+# extension uses 2 parts: 1 to get the filename (f_name), and 1 for the .ext (f_ext).To get both, you use the 
+# splitext(); but we just want the ext part, so you can "throw away a variable name" by simply using _ to start
+# the code line. Some IDE's gripe about this use, so be careful. 
+# @ 30:33. Now combine the random hex with the file extension to get the filename that will be saved. 
+# @ 30:56. Get the full path to the directory the pic will be saved in by using an attribute called root_path.
+# Line 80 in routes.py is explained @ 32:00.
+# Upload a .png file to test. It should upload and update the profile picture.
+# @ 35:30. Auto re-size images when they get uploaded to 125 pixels with a package called pillow. Install the
+# package with pip and add it to the routes.py file -> from PIL import Image. Lines 83-88 show the added code 
+# used.
+# Test by re-uploading your .png and view the image. You should see it scaled down smaller. This is important to
+# do because it will save tons of space and speed up the website. You should write in code that will delete old 
+# pictures that a user has uploaded.

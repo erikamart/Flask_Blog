@@ -1,0 +1,51 @@
+########
+# Part 12 - Custom Error Pages ->
+# The current error pages of the app are for 404 = not found and 403 = forbidden. We need 500 = general server 
+# error.
+# @ 1:17. Create a new blueprint package called "errors" in the application (flaskblog) directory. Remember that
+# all package directories need a __init__.py file even if it is a blank file. 
+
+# @ 2:03. Create a new file called "errors/handlers.py", import the blueprint class, and put code similar to a
+# routes.py file with routes that have functions for the three errors needed. Each error route will have a 
+# decorator and use .app_errorhandler(). Then they will have a function that takes in "error" parameter and 
+# returns a render template function. Code Snippet. ->
+# # from flask import Blueprint, render_template
+# # 
+# # errors = Blueprint("errors", __name__)
+# # 
+# # @errors.app_errorhandler(404)
+# # def error_404(error):
+# #     return render_template("errors/404.html"), 404
+# # 
+# # 
+# # @errors.app_errorhandler(403)
+# # def error_403(error):
+# #     return render_template("errors/403.html"), 403
+# # 
+# # 
+# # @errors.app_errorhandler(500)
+# # def error_500(error):
+# #     return render_template("errors/500.html"), 500
+
+# @ 5:12. Now there are app error handlers for three different page error responses. The reason that you use
+# app_errorhandler() over errorhandler() is because you want the handler to work accross the entire application. 
+
+# @ 5:42. Within the "templates" directory, create a new sub-directory called "errors". Within the new sub-
+# directory create three new template html files for 403, 404, and 500. For each new file you need to extend the
+# layout and insert html code in code blocks {%%}. 404.html Code Snippet. ->
+# # {% extends "layout.html" %}
+# # {% block content %}
+# #     <div class="content-section">
+# #         <h1>Oops. Page Not Found (404)</h1>
+# #         <p>That page does not exist. Try a different location.</p>
+# #     </div>
+# # {% endblock content %}
+
+# @ 9:00. Now you need to register the templates with the application in the flaskblog/__init__.py file. Code
+# Snippet. ->
+# # from flaskblog.errors.handlers import errors
+# # app.register_blueprint(errors)
+
+# Test in browser. Manually try to go to a page that doesn't exist by adding "/test" at the end of the browser 
+# link. You should see the 404 error. Manually try to "update" a post that doesn't belong to the user by adding 
+# "/update" at the end of the browser link. You should see the 403 error.

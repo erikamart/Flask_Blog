@@ -1,0 +1,30 @@
+# Don't track content of these folders #
+########################################
+__pycache__/
+.vscode/
+
+# Don't track content of these files #
+########################################
+PrivyData.txt
+environment.yaml
+
+# Compiled Sources #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.db
+
+# Packages #
+############
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
