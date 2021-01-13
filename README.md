@@ -4,21 +4,21 @@ Below are the courses in the Python Flask Tutorial Playlist, by Corey Schafer, t
 
 | No. | Course | Duration | Notes |
 | ------ | ------ | ------ | ------ |
-| 1. | [Getting Started][gsd] | 00h : 17m : 09s |  [Part 01-GettingStarted.txt](https://github.com/erikamart/Flask_Blog/blob/master/01-GettingStarted.txt)
-| 2. | [Templates][tmp] | 00h : 31m : 42s | [Part 02-Templates.txt](https://github.com/erikamart/Flask_Blog/blob/master/02-Templates.txt)
-| 3. | [Forms and User Input][fui] | 00h : 48m : 16s | [Part 03-Forms.txt](https://github.com/erikamart/Flask_Blog/blob/master/03-Forms.txt)
-| 4. | [Database with Flask-SQLAlchemy][dfs] | 00h : 29m : 58s | [Part 04-Database.txt](https://github.com/erikamart/Flask_Blog/blob/master/04-Database.txt)
-| 5. | [Package Structure][pst] | 00h : 20m : 38s | [Part 05-Packaging.txt](https://github.com/erikamart/Flask_Blog/blob/master/05-Packaging.txt)
-| 6. | [User Authentication][uan] | 00h : 47m : 15s | [Part 06-Authentication.txt](https://github.com/erikamart/Flask_Blog/blob/master/06-Authentication.txt)
-| 7. | [User Account and Profile Picture][uap] | 00h : 42m: 15s | [Part 07-ProfilePic.txt](https://github.com/erikamart/Flask_Blog/blob/master/07-ProfilePic.txt)
-| 8. | [Create, Update, & Delete Posts][cud] | 00h : 48m : 13s | [Part 08-CUD_Posts.txt](https://github.com/erikamart/Flask_Blog/blob/master/08-CUD_Posts.txt)
-| 9. | [Pagination][pgn] | 00h : 31m : 22s | [Part 09-Pagination.txt](https://github.com/erikamart/Flask_Blog/blob/master/09-Pagination.txt)
-| 10. | [Email and Password Reset][epr] | 00h : 42m : 12s | [Part 10-Email-Pass.txt](https://github.com/erikamart/Flask_Blog/blob/master/10-Email-Pass.txt)
-| 11. | [Blueprints and Configuration][bcn] | 00h : 42m : 43s | [Part 11-Blueprints_Configs](https://github.com/erikamart/Flask_Blog/blob/master/11-Blueprints_Configs.txt)
-| 12. | [Custom Error Pages][cep] | 00h : 12m : 45s | [Part 12-CustomErrorPgs](https://github.com/erikamart/Flask_Blog/blob/master/12-CustomErrorPgs.txt)
-| 13. | [Deploy to a Linux Server][dls] | 01h : 15m | [Part 13-DeployToLinode](#)
-| 14. | [How to Use a Custom Domain Name for Our Application][cda] | 00h : 24m | [Part 14-CustomDomain](#)
-| 15. | [How to enable HTTPS with a free SSL/TLS Certificate using Let's Encrypt][hsc] | 00h : 17m : 14s | [Part 15-HTTPS_SSL-TLS](#)
+| 1. | [Getting Started][gsd] | 00h : 17m : 09s |  [Part 01-GettingStarted.txt](https://github.com/erikamart/Flask_Blog/blob/main/01-GettingStarted.txt)
+| 2. | [Templates][tmp] | 00h : 31m : 42s | [Part 02-Templates.txt](https://github.com/erikamart/Flask_Blog/blob/main/02-Templates.txt)
+| 3. | [Forms and User Input][fui] | 00h : 48m : 16s | [Part 03-Forms.txt](https://github.com/erikamart/Flask_Blog/blob/main/03-Forms.txt)
+| 4. | [Database with Flask-SQLAlchemy][dfs] | 00h : 29m : 58s | [Part 04-Database.txt](https://github.com/erikamart/Flask_Blog/blob/main/04-Database.txt)
+| 5. | [Package Structure][pst] | 00h : 20m : 38s | [Part 05-Packaging.txt](https://github.com/erikamart/Flask_Blog/blob/main/05-Packaging.txt)
+| 6. | [User Authentication][uan] | 00h : 47m : 15s | [Part 06-Authentication.txt](https://github.com/erikamart/Flask_Blog/blob/main/06-Authentication.txt)
+| 7. | [User Account and Profile Picture][uap] | 00h : 42m: 15s | [Part 07-ProfilePic.txt](https://github.com/erikamart/Flask_Blog/blob/main/07-ProfilePic.txt)
+| 8. | [Create, Update, & Delete Posts][cud] | 00h : 48m : 13s | [Part 08-CUD_Posts.txt](https://github.com/erikamart/Flask_Blog/blob/main/08-CUD_Posts.txt)
+| 9. | [Pagination][pgn] | 00h : 31m : 22s | [Part 09-Pagination.txt](https://github.com/erikamart/Flask_Blog/blob/main/09-Pagination.txt)
+| 10. | [Email and Password Reset][epr] | 00h : 42m : 12s | [Part 10-Email-Pass.txt](https://github.com/erikamart/Flask_Blog/blob/main/10-Email-Pass.txt)
+| 11. | [Blueprints and Configuration][bcn] | 00h : 42m : 43s | [Part 11-Blueprints_Configs](https://github.com/erikamart/Flask_Blog/blob/main/11-Blueprints_Configs.txt)
+| 12. | [Custom Error Pages][cep] | 00h : 12m : 45s | [Part 12-CustomErrorPgs](https://github.com/erikamart/Flask_Blog/blob/main/12-CustomErrorPgs.txt)
+| 13. | [Deploy to a Linux Server][dls] | 01h : 15m | [Part 13-DeployToLinode](https://github.com/erikamart/Flask_Blog/blob/main/13-DeployToLinuxServer.txt)
+| 14. | [How to Use a Custom Domain Name for Our Application][cda] | 00h : 24m | [Part 14-CustomDomain](https://github.com/erikamart/Flask_Blog/blob/main/14-CustomDomainName.txt)
+| 15. | [How to enable HTTPS with a free SSL/TLS Certificate using Let's Encrypt][hsc] | 00h : 17m : 14s | [Part 15-HTTPS_SSL-TLS](https://github.com/erikamart/Flask_Blog/blob/main/15-HTTPS_SSL-TLScertificate.txt)
 
 #### TO DO
 
@@ -28,7 +28,7 @@ Below are the courses in the Python Flask Tutorial Playlist, by Corey Schafer, t
 
    Python Flask Tutorials - https://www.youtube.com/playlist?list=PL-osiE80TeTs4UjLw5MM6OjgkjFeUxCYH
 
-   Tutorial Github Code Snippets -  https://github.com/CoreyMSchafer/code_snippets/tree/master/Python/Flask_Blog
+   Tutorial Github Code Snippets -  https://github.com/CoreyMSchafer/code_snippets/tree/main/Python/Flask_Blog
 
    His Website - http://coreyms.com/
 
